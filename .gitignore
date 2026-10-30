@@ -1,0 +1,17 @@
+.venv/
+.python/
+.setup/
+__pycache__/
+.aqi_data/
+*.py[cod]
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables
+.env
