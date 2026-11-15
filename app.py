@@ -14,9 +14,7 @@ from ui.styles import apply_styles
 from ui.today import current_preferences, render_today_dashboard, scored_forecast, sidebar_conclusion
 from ui.weather import forecast_weather, weather_highlights
 
-
 st.set_page_config(page_title="Không khí & thời tiết", page_icon="◌", layout="wide", initial_sidebar_state="collapsed")
-
 
 apply_styles()
 
@@ -36,13 +34,8 @@ with st.container(key="dashboard-layout"):
 
 
 weather = None
-
-
 air = None
-
-
 weather_error = air_error = None
-
 
 with st.spinner("Đang tải dữ liệu…"):
     try:

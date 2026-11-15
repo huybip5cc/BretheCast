@@ -2,10 +2,10 @@
 
 CITIES = {
     "Hà Nội": {
-        "latitude": 21.0278,
-        "longitude": 105.8342,
+        "latitude": 20.9714,
+        "longitude": 105.7788,
         "region": "Miền Bắc · Việt Nam",
-        "landmark": "Hồ Gươm",
+        "landmark": "Hà Đông",
     },
     "TP. Hồ Chí Minh": {
         "latitude": 10.8231,

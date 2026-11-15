@@ -34,7 +34,6 @@ ACTIVITY_WEIGHTS = {
     "Mở cửa thông gió": {"air": 0.50, "heat": 0.15, "uv": 0.05, "rain": 0.30},
 }
 
-
 def _number(row: Any, key: str) -> float | None:
     try:
         value = row.get(key)

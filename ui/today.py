@@ -11,12 +11,17 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from activity_rules import ACTIVITIES, rank_windows, score_hour, window_reason
-from decision_engine import HORIZONS, generate_explanations, predict_exceedance
+from decision_engine import HORIZONS, generate_explanations, predict_exceedance, thresholds_for_city
 from health import TARGET_GROUPS, recommendation
 
 DEFAULT_START = time(6, 0)
 DEFAULT_END = time(22, 0)
 DEFAULT_DURATION = 60
+
+
+def _city_thresholds() -> tuple[int, ...]:
+    """Các ngưỡng US AQI của thành phố đang chọn (Hà Nội: 150 và 200; nơi khác: 100 và 150)."""
+    return thresholds_for_city(st.session_state.get("city", "Hà Nội"))
 
 
 def current_preferences() -> dict[str, Any]:
@@ -27,7 +32,7 @@ def current_preferences() -> dict[str, Any]:
         "start": st.session_state.get("suggest_start", DEFAULT_START),
         "end": st.session_state.get("suggest_end", DEFAULT_END),
         "duration": st.session_state.get("suggest_duration", DEFAULT_DURATION),
-        "threshold": st.session_state.get("suggest_threshold", 100),
+        "threshold": st.session_state.get("suggest_threshold", _city_thresholds()[0]),
     }
 
 
@@ -149,7 +154,7 @@ def _probability_cards(suite: dict[str, Any] | None, threshold: int) -> None:
     try:
         threshold = int(threshold)
     except (TypeError, ValueError, OverflowError):
-        threshold = 100
+        threshold = _city_thresholds()[0]
     classification = suite_data.get("classification", {})
     if not isinstance(classification, dict):
         classification = {}
@@ -244,7 +249,7 @@ def _calibration_chart(result: dict[str, Any]) -> None:
     if not points:
         st.caption("Đường hiệu chỉnh sẽ hiện khi tập kiểm tra có đủ cả hai kết quả AQI.")
         return
-    observed, predicted = zip(*points)
+    predicted, observed = zip(*points)  # engine trả (xác suất dự báo, tần suất quan sát)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="#bfc1c6", dash="dash"), name="Hiệu chỉnh hoàn hảo"))
     fig.add_trace(go.Scatter(x=predicted, y=observed, mode="lines+markers", line=dict(color="#5362bf", width=2), marker=dict(size=7), name="Mô hình"))
@@ -258,7 +263,7 @@ def _calibration_chart(result: dict[str, Any]) -> None:
 
 
 def _reliability(suite: dict[str, Any] | None, threshold: int) -> None:
-    st.markdown('<div class="source-note">Kiểm tra theo thời gian: 60% đầu để huấn luyện, giai đoạn kế tiếp để hiệu chỉnh xác suất, 20% cuối để đánh giá; giữa các phần bỏ cách ít nhất bằng chân trời dự báo. Mô hình AQI/PM₂.₅ đầu vào là CAMS hồi cứu, không phải trạm đo.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="source-note">Kiểm tra theo thời gian: 80% đầu để huấn luyện, 20% cuối (chưa từng thấy) để đánh giá; giữa hai phần bỏ cách ít nhất bằng chân trời dự báo. Mô hình AQI/PM₂.₅ đầu vào là CAMS hồi cứu, không phải trạm đo.</div>', unsafe_allow_html=True)
     if not suite:
         st.info("Mô hình chưa được đánh giá vì dữ liệu AQI hoặc thời tiết theo giờ hiện chưa sẵn sàng.")
         return
@@ -291,7 +296,7 @@ def _reliability(suite: dict[str, Any] | None, threshold: int) -> None:
             "MAE · giữ AQI hiện tại": _fmt_metric(result.get("persistence_mae")),
             "Giờ kiểm tra": result.get("test_n", 0),
         })
-    st.markdown('<div class="section-note">Sai số dự báo AQI · so với giữ nguyên AQI giờ trước</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">Sai số dự báo AQI · so với giữ nguyên AQI hiện tại</div>', unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(reg_rows), hide_index=True, width="stretch")
     ablation = suite.get("ablation", {})
     if ablation.get("status") == "ready":
@@ -336,7 +341,10 @@ def render_today_dashboard(
             end = st.time_input("Đến", value=DEFAULT_END, key="suggest_end")
         with duration_col:
             duration = st.select_slider("Thời lượng", options=(30, 60, 90, 120), value=DEFAULT_DURATION, format_func=lambda value: f"{value} phút", key="suggest_duration")
-        threshold = st.selectbox("Ngưỡng cảnh báo", (100, 150), format_func=lambda value: f"US AQI &gt; {value}", key="suggest_threshold")
+        threshold_options = _city_thresholds()
+        if st.session_state.get("suggest_threshold") not in threshold_options:
+            st.session_state["suggest_threshold"] = threshold_options[0]  # đổi thành phố thì về ngưỡng mặc định của thành phố đó
+        threshold = st.selectbox("Ngưỡng cảnh báo", threshold_options, format_func=lambda value: f"US AQI > {value}", key="suggest_threshold")
 
     scored = scored_forecast(forecast, activity, group)
     plan = rank_windows(scored, activity, group, start, end, int(duration), alternatives=2)

@@ -16,6 +16,9 @@ from history_store import load_archive, store_archive
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 TIMEOUT = 15
+# Số ngày quá khứ yêu cầu mỗi lần gọi. Open-Meteo cho phép tối đa 92 ngày; 90 ngày khớp với
+# khoảng đọc lịch sử SQLite (90 ngày) và tùy chọn "90 ngày" của biểu đồ lịch sử AQI.
+PAST_DAYS = 90
 
 
 class DataUnavailable(RuntimeError):
@@ -63,7 +66,7 @@ def get_weather(city: str) -> dict[str, Any]:
             "latitude": location["latitude"],
             "longitude": location["longitude"],
             "timezone": TIMEZONE,
-            "past_days": 30,
+            "past_days": PAST_DAYS,
             "forecast_days": 7,
             "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m",
             "hourly": "temperature_2m,relative_humidity_2m,visibility,precipitation,precipitation_probability,surface_pressure,uv_index,wind_speed_10m,wind_direction_10m",
@@ -106,7 +109,7 @@ def get_air_quality(city: str) -> dict[str, Any]:
             "longitude": location["longitude"],
             "timezone": TIMEZONE,
             "forecast_days": 7,
-            "past_days": 30,
+            "past_days": PAST_DAYS,
             "current": "us_aqi,european_aqi,us_aqi_pm2_5,european_aqi_pm2_5,pm2_5",
             "hourly": ",".join(fields),
         },
