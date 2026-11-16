@@ -12,9 +12,9 @@ from ui.air_quality import aqi_history, aqi_insights, forecast_aqi, pollution_ho
 from ui.sidebar import aqi_sidebar, city_tile, mode_picker, sidebar_city_selector, weather_sidebar
 from ui.styles import apply_styles
 from ui.today import current_preferences, render_today_dashboard, scored_forecast, sidebar_conclusion
-from ui.weather import forecast_weather, weather_highlights
+from ui.weather import forecast_weather, weather_dayparts, weather_highlights
 
-st.set_page_config(page_title="Không khí & thời tiết", page_icon="◌", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="BretheCast dự báo thời tiết và không khí", page_icon="◌", layout="wide", initial_sidebar_state="collapsed")
 
 apply_styles()
 
@@ -61,9 +61,9 @@ if mode == "Dự báo & gợi ý hoạt động":
     if weather and air:
         with st.spinner("Đang kiểm định chuỗi thời tiết và AQI theo thời gian…"):
             suite = train_city_suite(city, weather["hourly"], air["hourly"])
-        forecast = planner_forecast(weather["hourly"], air["hourly"], suite.get("regression", {}).get(1))
+        forecast = planner_forecast(weather["hourly"], air["hourly"])
     elif weather:
-        forecast = planner_forecast(weather["hourly"], pd.DataFrame(), None)
+        forecast = planner_forecast(weather["hourly"], pd.DataFrame())
     sidebar_forecast = scored_forecast(forecast, preferences["activity"], preferences["group"])
     sidebar_plan = rank_windows(
         sidebar_forecast, preferences["activity"], preferences["group"],
@@ -100,6 +100,7 @@ else:
             st.markdown('<div class="chart-card" style="margin:4px 0 14px;font-size:12px;color:#777">Nguồn API tạm thời không sẵn sàng. Đang hiển thị chuỗi mô hình đã lưu; AQI và PM₂.₅ hiện tại cùng dự báo được để trống.</div>', unsafe_allow_html=True)
         if mode == "Dự báo thời tiết":
             if weather:
+                weather_dayparts(weather)
                 forecast_weather(weather)
                 weather_highlights(weather, air, st.session_state.get("aqi_standard", "US AQI"))
             else:

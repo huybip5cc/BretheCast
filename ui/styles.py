@@ -206,13 +206,10 @@ div[data-testid="stToolbar"]{display:none}
 .st-key-today-planner-form div[data-baseweb="select"]>div,.st-key-today-planner-form [data-testid="stTimeInput"] input{border-radius:10px!important;background:#fff!important;border-color:#e8e8eb!important}
 .st-key-today-planner-form [data-testid="stSlider"]{padding-top:4px}
 .probability-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 16px}
-.aqi-prediction-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
-.probability-card,.today-mini-card,.aqi-prediction-card{background:#fff;border:2px solid #c5e3c8;border-radius:18px;padding:17px 19px;min-height:116px;box-sizing:border-box}
+.probability-card,.today-mini-card{background:#fff;border:2px solid #c5e3c8;border-radius:18px;padding:17px 19px;min-height:116px;box-sizing:border-box}
 .probability-card{box-shadow:0 5px 18px rgba(37,68,88,.11);transition:box-shadow .2s ease,border-color .2s ease}
 .probability-card:hover{border-color:#a8d3ae;box-shadow:0 8px 22px rgba(74,131,80,.15)}
 .probability-value{font-size:31px;line-height:1.15;letter-spacing:-.7px;font-weight:500;margin:7px 0;color:#191a1c;font-variant-numeric:tabular-nums}
-.aqi-prediction-value{font-size:34px;line-height:1.15;letter-spacing:-.7px;font-weight:600;margin:8px 0 2px;font-variant-numeric:tabular-nums}
-.aqi-prediction-category{font-size:13px;line-height:1.4;font-weight:600;margin-bottom:8px}
 .probability-copy,.today-mini-copy{font-size:12px;line-height:1.55;color:#777a80}
 .today-mini-card{height:100%;min-height:170px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box}
 .today-mini-card .today-mini-copy{margin:8px 0;overflow-wrap:anywhere}
@@ -223,11 +220,29 @@ div[data-testid="stToolbar"]{display:none}
 .today-advice-footer{font-size:11px;color:#878a90;line-height:1.45}
 @media(max-width:1100px){.block-container{margin:22px!important}.st-key-dashboard-layout{border-radius:30px}.st-key-dashboard-layout div[data-testid="stColumn"]:has(.st-key-dashboard-sidebar){border-radius:30px 0 0 30px;flex-basis:26%!important;max-width:26%;padding:26px 20px}.st-key-dashboard-layout div[data-testid="stColumn"]:has(.st-key-dashboard-main){border-radius:0 30px 30px 0;flex-basis:74%!important;max-width:74%;padding:25px 25px 40px}.forecast-grid{gap:5px}.metric-grid{column-gap:13px;row-gap:14px}.metric-card{padding:20px;min-height:180px}.metric-card.compact{height:290px;min-height:290px;padding:16px 18px}.metric-card.compact .metric-value{font-size:36px}.pm25-card,.st-key-health-advisory{height:290px;min-height:290px;padding:14px 18px}.pm25-dial{width:214px}.st-key-aqi-insights-row-1 div[data-testid="stHorizontalBlock"],.st-key-aqi-insights-row-2 div[data-testid="stHorizontalBlock"]{gap:16px!important}.metric-value{font-size:37px}.metric-label{font-size:15px}.metric-foot{font-size:14px}.uv-card{min-height:235px}.uv-gauge{width:184px}.sun-time strong{font-size:19px}.wind-card .metric-value{font-size:34px}.wind-card .metric-value small{font-size:14px}.wind-card .metric-label{font-size:14px}.wind-direction{font-size:13px}}
 @media(max-width:760px){.block-container{margin:0!important}.st-key-dashboard-layout{border-radius:0;min-height:100vh}.st-key-dashboard-layout div[data-testid="stHorizontalBlock"]:has(>div[data-testid="stColumn"] .st-key-dashboard-sidebar){flex-direction:column!important}.st-key-dashboard-layout div[data-testid="stColumn"]:has(.st-key-dashboard-sidebar){border-right:0;border-bottom:1px solid #d9eaf3;background:linear-gradient(180deg,#e9f5fc 0%,#f5fafe 75%,#fff 100%)}.st-key-dashboard-layout div[data-testid="stColumn"]:has(.st-key-dashboard-sidebar),.st-key-dashboard-layout div[data-testid="stColumn"]:has(.st-key-dashboard-main){flex:1 1 auto!important;max-width:100%;padding:20px 18px;border-radius:0}.weather-hero{padding-top:12px}.air-illustration{height:118px}.weather-hero .temperature,.aqi-number{font-size:64px}.city-tile{margin-top:18px}.forecast-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.aqi-forecast-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;row-gap:12px}.metric-card{min-height:164px;padding:17px}.metric-card.compact{height:280px;min-height:280px;padding:14px}.pm25-card,.st-key-health-advisory{height:280px;min-height:280px;padding:14px}.pm25-dial{width:200px}.metric-card.compact .metric-value{font-size:31px}.st-key-aqi-insights-row-1 div[data-testid="stHorizontalBlock"],.st-key-aqi-insights-row-2 div[data-testid="stHorizontalBlock"]{flex-direction:column!important;gap:12px!important}.metric-value{font-size:33px}.metric-label{font-size:15px}.metric-foot{font-size:14px}.uv-card{min-height:220px}.uv-gauge{width:166px}.sun-time{gap:4px}.sun-time strong{font-size:15px}.sun-time span:last-child{font-size:11px}.sun-arrow{font-size:19px;width:20px}.humidity-ring{width:104px;height:104px;flex-basis:104px}.wind-card .metric-value{font-size:30px}.wind-card .metric-value small{font-size:13px}.section-title{margin-top:22px}}
-@media(max-width:480px){.metric-grid{grid-template-columns:1fr}.metric-card{min-height:136px}.forecast-grid,.aqi-forecast-grid,.aqi-prediction-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:900px){.probability-grid{grid-template-columns:1fr}.aqi-prediction-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.today-mini-card{min-height:140px}.window-time{font-size:25px}}
+@media(max-width:480px){.metric-grid{grid-template-columns:1fr}.metric-card{min-height:136px}.forecast-grid,.aqi-forecast-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.probability-grid{grid-template-columns:1fr}.today-mini-card{min-height:140px}.window-time{font-size:25px}}
 .stApp div[data-baseweb="select"]>div,.stApp div[data-baseweb="select"]>div>div,.stApp div[data-baseweb="select"]>div>div>div,.stApp [data-testid="stTimeInput"] input,.stApp [data-baseweb="input"]>div{background-color:#fff!important;background-image:none!important}
 .stApp [data-baseweb="select"],.stApp [data-baseweb="select"] *,.stApp [data-baseweb="input"],.stApp [data-testid="stTimeInput"] input{background-color:#fff!important}
 .stApp [data-baseweb="popover"] [role="listbox"],.stApp [data-baseweb="popover"] [role="option"],.stApp [data-baseweb="menu"]{background-color:#fff!important}
+.weather-dayparts-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 8px}
+.daypart-card{min-width:0;overflow:hidden;border:1px solid #e6eaed;border-radius:17px;background:#fff;box-shadow:0 4px 15px rgba(54,78,92,.07);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.daypart-card:hover{transform:translateY(-3px);border-color:#c6dce2;box-shadow:0 10px 22px rgba(54,78,92,.12)}
+.daypart-art{height:96px;position:relative;overflow:hidden;background:#eaf2f4}
+.daypart-illustration{display:block;width:100%;height:100%}
+.daypart-clock{position:absolute;right:9px;top:9px;padding:4px 8px;border:1px solid rgba(255,255,255,.65);border-radius:999px;background:rgba(255,255,255,.76);backdrop-filter:blur(8px);color:#34444c;font-size:10px;font-weight:600;font-variant-numeric:tabular-nums}
+.daypart-copy{padding:11px 12px 13px}
+.daypart-heading{display:flex;align-items:center;justify-content:space-between;gap:5px;color:#333b40}
+.daypart-heading strong{font-size:13px;font-weight:600}
+.daypart-heading>span{color:#92999d;font-size:9px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.daypart-temperature{display:block;margin:6px 0 2px;color:#18252c;font-size:27px;line-height:1.1;font-weight:500;font-variant-numeric:tabular-nums}
+.daypart-temperature small{margin-left:3px;color:#899398;font-size:11px;font-weight:400}
+.daypart-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;color:#738087;font-size:9px;line-height:1.4}
+.daypart-rain{color:#56819a;font-weight:500}
+.daypart-missing{color:#a2a6aa;font-size:10px}
+@media(max-width:1100px){.weather-dayparts-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.weather-dayparts-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.daypart-art{height:90px}.daypart-copy{padding:10px}}
+@media(max-width:480px){.weather-dayparts-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.daypart-art{height:100px}.daypart-copy{padding:11px 12px}}
 </style>
 """
 

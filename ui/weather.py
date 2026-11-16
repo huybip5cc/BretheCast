@@ -6,8 +6,81 @@ import pandas as pd
 import streamlit as st
 
 from analysis import AQI_STANDARDS, category
-from ui.assets import direction, fmt, weather_icon, weather_text
+from ui.assets import daypart_illustration, direction, fmt, weather_icon, weather_text
 from ui.widgets import card_markup
+
+DAYPARTS = (
+    ("morning", "Sáng", 6, 10, 8),
+    ("noon", "Trưa", 10, 14, 12),
+    ("afternoon", "Chiều", 14, 18, 16),
+    ("evening", "Tối", 18, 21, 19),
+    ("night", "Đêm", 21, 6, 23),
+)
+
+
+def weather_dayparts(weather: dict):
+    """Show an illustrated timeline with representative hourly weather values."""
+    hourly = weather.get("hourly")
+    if not isinstance(hourly, pd.DataFrame):
+        hourly = pd.DataFrame()
+    updated_at = pd.to_datetime(weather.get("updated_at"), errors="coerce")
+    if pd.isna(updated_at):
+        updated_at = pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").tz_localize(None)
+    today = updated_at.date()
+    tomorrow = (pd.Timestamp(today) + pd.Timedelta(days=1)).date()
+
+    st.markdown(
+        '<div class="section-title">Nhịp thời tiết hôm nay</div>'
+        '<div class="section-note">Năm khung giờ tiêu biểu, kèm nhiệt độ và khả năng mưa tại mốc giờ trên ảnh.</div>',
+        unsafe_allow_html=True,
+    )
+
+    cards = []
+    has_hourly_times = "time" in hourly and pd.api.types.is_datetime64_any_dtype(hourly["time"])
+    for key, label, start_hour, end_hour, target_hour in DAYPARTS:
+        sample = pd.DataFrame()
+        if has_hourly_times:
+            hours = hourly["time"].dt.hour
+            dates = hourly["time"].dt.date
+            if key == "night":
+                mask = ((dates == today) & (hours >= start_hour)) | ((dates == tomorrow) & (hours < end_hour))
+            else:
+                mask = (dates == today) & (hours >= start_hour) & (hours < end_hour)
+            sample = hourly.loc[mask]
+
+        sample_time = "—"
+        temperature = "—"
+        rain = "—"
+        if not sample.empty:
+            target = pd.Timestamp(today) + pd.Timedelta(hours=target_hour)
+            index = (sample["time"] - target).abs().idxmin()
+            row = sample.loc[index]
+            sample_time = row["time"].strftime("%H:%M")
+            temperature = fmt(row.get("temperature_2m"))
+            rain = fmt(row.get("precipitation_probability"))
+
+        end_label = f"{end_hour:02d}:00" if key != "night" else "06:00"
+        temperature_markup = (
+            f'<span class="daypart-temperature">{temperature}<small>°C</small></span>'
+            if temperature != "—" else '<span class="daypart-temperature daypart-missing">—</span>'
+        )
+        rain_markup = (
+            f'<span class="daypart-rain"><span aria-hidden="true">💧</span> {rain}% mưa</span>'
+            if rain != "—" else '<span class="daypart-rain daypart-missing">Chưa có xác suất mưa</span>'
+        )
+        cards.append(
+            f'<article class="daypart-card"><div class="daypart-art">{daypart_illustration(key)}'
+            f'<span class="daypart-clock">{sample_time}</span></div>'
+            f'<div class="daypart-copy"><div class="daypart-heading"><strong>{label}</strong>'
+            f'<span>{start_hour:02d}:00–{end_label}</span></div>'
+            f'{temperature_markup}<div class="daypart-meta">{rain_markup}</div></div></article>'
+        )
+
+    st.markdown(f'<div class="weather-dayparts-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="source-note">Số liệu lấy từ mốc giờ đại diện của Open‑Meteo; khung đêm tính từ 21:00 đến 06:00 hôm sau.</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def forecast_weather(weather: dict):

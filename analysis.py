@@ -1,4 +1,4 @@
-"""AQI categories, daily aggregation, historical summaries and anomaly checks."""
+"""AQI categories, daily aggregation, historical summaries, and hourly patterns."""
 
 from __future__ import annotations
 

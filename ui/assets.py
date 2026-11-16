@@ -53,6 +53,72 @@ def weather_icon_data(filename: str) -> str:
     return f"data:image/png;base64,{encoded}"
 
 
+def daypart_illustration(period: str) -> str:
+    """Return a small, self-contained SVG landscape for one part of the day."""
+    scenes = {
+        "morning": {
+            "sky": ("#f4b995", "#e8e9dc"),
+            "sun": '<circle cx="70" cy="94" r="25" fill="#ffd17f"/>',
+            "cloud": '<path d="M180 53c2-10 17-14 25-6 8-15 31-10 32 7 13-2 18 16 5 19h-55c-12-1-16-13-7-20Z" fill="#fff" opacity=".62"/>',
+            "far": "#91aa8d",
+            "near": "#648875",
+            "city": "#657d78",
+            "stars": "",
+        },
+        "noon": {
+            "sky": ("#73c4e9", "#e2f4e9"),
+            "sun": '<circle cx="246" cy="34" r="22" fill="#ffe17b"/>',
+            "cloud": '<path d="M62 49c2-11 18-15 27-7 9-16 33-11 34 7 13-2 19 17 5 20H73c-13-1-17-13-11-20Z" fill="#fff" opacity=".72"/>',
+            "far": "#9ccf9f",
+            "near": "#67a995",
+            "city": "#6d9d90",
+            "stars": "",
+        },
+        "afternoon": {
+            "sky": ("#67a9d6", "#f6d3a2"),
+            "sun": '<circle cx="229" cy="62" r="24" fill="#ffd17d"/>',
+            "cloud": '<path d="M40 48c2-10 17-14 25-6 8-15 31-10 32 7 13-2 18 16 5 19H53c-12-1-16-13-13-20Z" fill="#fff" opacity=".52"/>',
+            "far": "#9bb38b",
+            "near": "#6b9278",
+            "city": "#71877d",
+            "stars": "",
+        },
+        "evening": {
+            "sky": ("#e88168", "#f6c486"),
+            "sun": '<circle cx="257" cy="96" r="27" fill="#ffe09a"/>',
+            "cloud": '<path d="M66 43c2-10 17-14 25-6 8-15 31-10 32 7 13-2 18 16 5 19H79c-12-1-16-13-13-20Z" fill="#fff" opacity=".42"/>',
+            "far": "#806d72",
+            "near": "#4d596c",
+            "city": "#465369",
+            "stars": "",
+        },
+        "night": {
+            "sky": ("#17234b", "#465783"),
+            "sun": '<path d="M237 20a21 21 0 1 0 22 34 17 17 0 0 1-22-34Z" fill="#f5e8b5"/>',
+            "cloud": '<path d="M51 62c2-9 16-13 23-5 8-13 27-9 29 6 12-2 16 14 4 17H63c-11-1-15-11-12-18Z" fill="#bcc9e6" opacity=".25"/>',
+            "far": "#394765",
+            "near": "#202d4b",
+            "city": "#192440",
+            "stars": '<g fill="#fff1bd"><circle cx="48" cy="25" r="1.7"/><circle cx="103" cy="20" r="1.2"/><circle cx="147" cy="41" r="1.4"/><circle cx="190" cy="17" r="1.6"/><circle cx="290" cy="60" r="1.2"/></g>',
+        },
+    }
+    scene = scenes.get(period, scenes["morning"])
+    key = period if period in scenes else "morning"
+    sky_top, sky_bottom = scene["sky"]
+    return (
+        f'<svg class="daypart-illustration" viewBox="0 0 320 140" '
+        f'preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">'
+        f'<defs><linearGradient id="daypart-sky-{key}" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop stop-color="{sky_top}"/><stop offset="1" stop-color="{sky_bottom}"/>'
+        f'</linearGradient></defs><path fill="url(#daypart-sky-{key})" d="M0 0h320v140H0z"/>'
+        f'{scene["stars"]}{scene["sun"]}{scene["cloud"]}'
+        f'<path d="M0 107Q62 77 132 100T260 93Q294 88 320 97V140H0Z" fill="{scene["far"]}"/>'
+        f'<path d="M0 111V95h20V79h18v32h12V88h24v23h15V72h20v39h15V84h27v27h17V67h21v44h19V82h25v29h17V75h20v36h20v29H0Z" fill="{scene["city"]}"/>'
+        f'<path d="M0 117Q72 96 144 113T320 107V140H0Z" fill="{scene["near"]}"/>'
+        f'</svg>'
+    )
+
+
 @lru_cache(maxsize=4)
 def aqi_icon_data(filename: str) -> str:
     image_path = Path(__file__).resolve().parent.parent / "assets" / "aqi" / filename

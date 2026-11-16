@@ -13,7 +13,7 @@ horizon = int(sys.argv[2]) if len(sys.argv) > 2 else 6
 threshold = de.thresholds_for_city(city)[0]
 
 weather, air = get_weather(city), get_air_quality(city)
-data = de.supervised_table(weather["hourly"], air["hourly"], horizon, peak=True)
+data = de.supervised_table(weather["hourly"], air["hourly"], horizon)
 result = de._fit_classifier(data, horizon, threshold)
 latest = de.build_feature_frame(weather["hourly"], air["hourly"]).query("not is_forecast").dropna(subset=list(de.FEATURES)).iloc[-1]
 

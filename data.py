@@ -15,7 +15,7 @@ from history_store import ARCHIVE_DAYS, load_archive, store_archive
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
-TIMEOUT = 15
+TIMEOUT = 60
 # Dùng cùng khoảng lưu lịch sử để khớp API, biểu đồ và SQLite.
 PAST_DAYS = ARCHIVE_DAYS
 
