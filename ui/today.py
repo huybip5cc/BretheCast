@@ -11,7 +11,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from activity_rules import ACTIVITIES, rank_windows, score_hour, window_reason
-from decision_engine import HORIZONS, generate_explanations, predict_exceedance, thresholds_for_city
+from analysis import category
+from decision_engine import HORIZONS, REGRESSION_HORIZONS, predict_exceedance, predict_next_aqi, thresholds_for_city
 from health import TARGET_GROUPS, recommendation
 
 DEFAULT_START = time(6, 0)
@@ -46,12 +47,12 @@ def scored_forecast(forecast: pd.DataFrame, activity: str, group: str) -> pd.Dat
     return pd.concat([forecast.reset_index(drop=True), pd.DataFrame(rows)], axis=1)
 
 
-def sidebar_conclusion(city: str, forecast: pd.DataFrame, plan: list[dict[str, Any]], activity: str, group: str) -> None:
+def sidebar_conclusion(city: str, plan: list[dict[str, Any]], activity: str, group: str) -> None:
     if plan:
         chosen = plan[0]
         label = "Nên tránh" if chosen["status"] == "avoid" else "Nên cân nhắc" if chosen["status"] == "caution" else "Khung giờ phù hợp"
         date_time = f"{chosen['start']:%H:%M}–{chosen['end']:%H:%M}"
-        reasons = window_reason(chosen, forecast)
+        reasons = window_reason(chosen)
         explanation = " · ".join(reasons[:2]) if reasons else "Các yếu tố có dự báo trong khung này thuận lợi hơn những khung đã xếp hạng."
         st.markdown(
             f'<div class="today-sidebar-summary"><div class="today-kicker">{activity}</div>'
@@ -62,7 +63,7 @@ def sidebar_conclusion(city: str, forecast: pd.DataFrame, plan: list[dict[str, A
         )
     else:
         st.markdown(
-            '<div class="today-sidebar-summary"><div class="today-kicker">Gợi ý hôm nay</div>'
+            '<div class="today-sidebar-summary"><div class="today-kicker">Dự báo & gợi ý hoạt động</div>'
             '<div class="today-sidebar-title">Chưa thể xếp hạng khung giờ</div>'
             '<div class="today-sidebar-copy">Cần dự báo AQI theo giờ liên tục để so sánh các khoảng rảnh.</div></div>',
             unsafe_allow_html=True,
@@ -77,7 +78,7 @@ def _max_aqi(window: dict[str, Any]) -> float | None:
     return float(values.max()) if not values.empty else None
 
 
-def _window_card(window: dict[str, Any], number: int, forecast: pd.DataFrame) -> str:
+def _window_card(window: dict[str, Any], number: int) -> str:
     title = "Khung tốt nhất" if number == 0 else f"Phương án {number}"
     status = {"good": "Thuận lợi", "caution": "Cân nhắc", "avoid": "Nên tránh"}.get(window["status"], "")
     color = {"good": "#24996b", "caution": "#b1820d", "avoid": "#c45d50"}.get(window["status"], "#66717a")
@@ -112,7 +113,7 @@ def _timeline(forecast: pd.DataFrame, plan: list[dict[str, Any]]) -> None:
         return
     custom = []
     for row in forecast.itertuples():
-        aqi = getattr(row, "us_aqi", np_nan())
+        aqi = getattr(row, "us_aqi", math.nan)
         source = getattr(row, "aqi_source", "") or "AQI theo giờ chưa có"
         status = {"good": "Thuận lợi", "caution": "Cân nhắc", "avoid": "Nên tránh", "unranked": "Chưa xếp hạng"}.get(row.risk_status, "")
         custom.append([source, status, aqi])
@@ -143,10 +144,6 @@ def _timeline(forecast: pd.DataFrame, plan: list[dict[str, Any]]) -> None:
     )
     st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
     st.markdown('<div class="source-note">Chiều cao cột thể hiện mức điều kiện tổng hợp; vùng xanh nhạt đánh dấu khung được chọn. Giờ không có AQI được để trống.</div>', unsafe_allow_html=True)
-
-
-def np_nan() -> float:
-    return float("nan")
 
 
 def _probability_cards(suite: dict[str, Any] | None, threshold: int) -> None:
@@ -199,6 +196,94 @@ def _probability_cards(suite: dict[str, Any] | None, threshold: int) -> None:
     st.markdown(f'<div class="probability-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
 
 
+def _aqi_prediction_cards(suite: dict[str, Any] | None) -> None:
+    suite_data = suite if isinstance(suite, dict) else {}
+    latest = suite_data.get("latest")
+    regression = suite_data.get("regression", {})
+    if not isinstance(regression, dict):
+        regression = {}
+    try:
+        reference = float(latest.get("us_aqi_now")) if latest is not None else None
+        if reference is not None and not math.isfinite(reference):
+            reference = None
+    except (TypeError, ValueError, OverflowError):
+        reference = None
+
+    predictions: list[tuple[int, float, str, str]] = []
+    cards = []
+    for horizon in REGRESSION_HORIZONS:
+        result = regression.get(horizon, regression.get(str(horizon), {}))
+        if not isinstance(result, dict):
+            result = {}
+        value = None
+        method = ""
+        if latest is not None and result.get("status") == "ready":
+            try:
+                value = predict_next_aqi(result, latest)
+            except (KeyError, TypeError, ValueError, OverflowError):
+                value = None
+            if value is not None:
+                method = "Ridge · tốt hơn baseline khi kiểm tra"
+            elif result.get("selected") == "persistence" and reference is not None:
+                value = reference
+                method = "Giữ AQI gần nhất · Ridge chưa thắng baseline"
+
+        if value is None or not math.isfinite(float(value)):
+            amount, label, color = "—", "Chưa đủ dữ liệu kiểm định", "#9b9da1"
+            detail = result.get("reason", "Chưa có dự báo hợp lệ ở mốc này.")
+        else:
+            value = float(value)
+            label, color = category(value, "US AQI")
+            amount = f"{value:.0f}"
+            detail = method
+            predictions.append((horizon, value, method, color))
+
+        cards.append(
+            f'<div class="aqi-prediction-card"><div class="today-kicker">Sau {horizon} giờ · US AQI</div>'
+            f'<div class="aqi-prediction-value" style="color:{color}">{amount}</div>'
+            f'<div class="aqi-prediction-category" style="color:{color}">{label}</div>'
+            f'<div class="probability-copy">{detail}</div></div>'
+        )
+
+    st.markdown('<div class="section-title">Dự báo AQI theo từng mốc</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="aqi-prediction-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+    if reference is None:
+        st.info("Chưa có AQI tham chiếu để tạo dự báo theo mốc giờ.")
+        return
+
+    stamp = pd.to_datetime(latest.get("time"), errors="coerce") if latest is not None else pd.NaT
+    stamp_label = stamp.strftime("%H:%M %d/%m") if pd.notna(stamp) else "không rõ thời điểm"
+    st.caption(f"Mốc tham chiếu: US AQI {reference:.0f} lúc {stamp_label}. Mỗi thẻ ghi rõ dự báo Ridge hoặc baseline giữ AQI gần nhất.")
+    if not predictions:
+        return
+
+    hours = [0, *[horizon for horizon, *_ in predictions]]
+    labels = ["Mốc tham chiếu", *[f"+{horizon} giờ" for horizon, *_ in predictions]]
+    values = [reference, *[value for _, value, _, _ in predictions]]
+    methods = ["AQI tham chiếu", *[method for _, _, method, _ in predictions]]
+    colors = ["#7e858d", *[color for _, _, _, color in predictions]]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=hours, y=values, mode="lines+markers", name="AQI dự báo",
+        line=dict(color="#5362bf", width=2), marker=dict(color=colors, size=9),
+        customdata=list(zip(labels, methods)),
+        hovertemplate="%{customdata[0]}<br>US AQI %{y:.0f}<br>%{customdata[1]}<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=hours, y=[reference] * len(labels), mode="lines", name="Baseline giữ AQI gần nhất",
+        line=dict(color="#bfc1c6", width=1.5, dash="dash"), hoverinfo="skip",
+    ))
+    fig.update_layout(
+        height=245, margin=dict(l=8, r=8, t=8, b=24), paper_bgcolor="white", plot_bgcolor="white",
+        font=dict(family="Poppins, sans-serif", color="#7e8187", size=10),
+        xaxis=dict(title="Mốc dự báo", tickmode="array", tickvals=hours, ticktext=labels, showgrid=False),
+        yaxis=dict(title="US AQI", rangemode="tozero", gridcolor="#f0f0f2"),
+        legend=dict(orientation="h", y=1.12, x=0),
+    )
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+
+
 def _weather_card(plan: list[dict[str, Any]]) -> None:
     if not plan:
         st.markdown(
@@ -209,7 +294,7 @@ def _weather_card(plan: list[dict[str, Any]]) -> None:
         return
     rows = pd.DataFrame(plan[0]["rows"])
     def values(name: str) -> pd.Series:
-        source = rows[name] if name in rows else pd.Series(np_nan(), index=rows.index)
+        source = rows[name] if name in rows else pd.Series(math.nan, index=rows.index)
         return pd.to_numeric(source, errors="coerce")
     temp = values("temperature_2m")
     uv = values("uv_index")
@@ -292,12 +377,16 @@ def _reliability(suite: dict[str, Any] | None, threshold: int) -> None:
     for horizon, result in suite.get("regression", {}).items():
         reg_rows.append({
             "Chân trời": f"{horizon} giờ",
-            "MAE · mô hình": _fmt_metric(result.get("mae")),
+            "Cách dự báo dùng": "Ridge" if result.get("selected") == "ridge" else "Giữ AQI hiện tại",
+            "MAE · cách dùng": _fmt_metric(result.get("mae")),
+            "MAE · Ridge thử nghiệm": _fmt_metric(result.get("candidate_mae")),
             "MAE · giữ AQI hiện tại": _fmt_metric(result.get("persistence_mae")),
+            "Validation thắng": f"{result.get('validation_wins', 0)}/{result.get('validation_folds', 0)}",
             "Giờ kiểm tra": result.get("test_n", 0),
         })
     st.markdown('<div class="section-note">Sai số dự báo AQI · so với giữ nguyên AQI hiện tại</div>', unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(reg_rows), hide_index=True, width="stretch")
+    st.caption("Chỉ dùng Ridge khi thắng baseline ở mọi cửa sổ validation cuốn chiếu (cải thiện trung bình ít nhất 1%) và tiếp tục thắng trên 20% dữ liệu gần nhất. Đoạn gần nhất là cổng vận hành, không phải bài kiểm tra độc lập; MAE Ridge thử nghiệm được tách riêng với cách dự báo đang dùng.")
     ablation = suite.get("ablation", {})
     if ablation.get("status") == "ready":
         full = suite.get("regression", {}).get(6, {})
@@ -329,7 +418,7 @@ def render_today_dashboard(
 ) -> list[dict[str, Any]]:
     """Render the third mode and return ranked windows for the sidebar summary."""
     with st.container(key="today-planner-form"):
-        st.markdown('<div class="section-title" style="margin-top:0">Gợi ý hôm nay 📅</div><div class="section-note">Chọn hoạt động và khoảng rảnh để tìm giờ thuận lợi hơn trong 48 giờ tới.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title" style="margin-top:0">Dự báo & gợi ý hoạt động 📅</div><div class="section-note">Xem AQI dự báo, xác suất vượt ngưỡng và thời tiết; chọn hoạt động để tìm khung giờ phù hợp trong 48 giờ tới.</div>', unsafe_allow_html=True)
         activity_col, group_col, start_col, end_col, duration_col = st.columns([1.25, 1.4, 0.8, 0.8, 0.85], gap="small")
         with activity_col:
             activity = st.selectbox("Hoạt động", ACTIVITIES, key="suggest_activity")
@@ -350,17 +439,18 @@ def render_today_dashboard(
     plan = rank_windows(scored, activity, group, start, end, int(duration), alternatives=2)
     st.markdown('<div class="section-title">Khung giờ tốt nhất 48 giờ tới</div>', unsafe_allow_html=True)
     if plan:
-        st.markdown(_window_card(plan[0], 0, scored), unsafe_allow_html=True)
+        st.markdown(_window_card(plan[0], 0), unsafe_allow_html=True)
         if len(plan) > 1:
             st.markdown('<div class="section-note" style="margin-top:14px">Các lựa chọn khác, không chồng lấn</div>', unsafe_allow_html=True)
             cols = st.columns(len(plan) - 1, gap="small")
             for index, alternative in enumerate(plan[1:]):
                 with cols[index]:
-                    st.markdown(_window_card(alternative, index + 1, scored), unsafe_allow_html=True)
+                    st.markdown(_window_card(alternative, index + 1), unsafe_allow_html=True)
     else:
         st.markdown('<div class="chart-card">Chưa thể xếp hạng: cần các giờ AQI liên tiếp trong khoảng rảnh đã chọn.</div>', unsafe_allow_html=True)
     _timeline(scored, plan)
 
+    _aqi_prediction_cards(suite)
     _probability_cards(suite, int(threshold))
     left, middle, right = st.columns(3, gap="small")
     with left:

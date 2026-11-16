@@ -178,7 +178,12 @@ def rank_windows(
             available = [item["components"][name] for item in scored if name in item["components"]]
             if available:
                 components[name] = float(np.mean(available))
-        source = "Dự báo ML của project" if "Dự báo ML của project" in set(window.get("aqi_source", [])) else "Dự báo Open-Meteo"
+        sources = set(window.get("aqi_source", []))
+        source = (
+            "Dự báo ML của project" if "Dự báo ML của project" in sources
+            else "Giữ AQI hiện tại (mốc tham chiếu)" if "Giữ AQI hiện tại (mốc tham chiếu)" in sources
+            else "Dự báo Open-Meteo"
+        )
         candidates.append({
             "start": times.iloc[0],
             "end": pd.Timestamp(times.iloc[0]) + pd.Timedelta(duration_minutes, unit="m"),
@@ -199,7 +204,7 @@ def rank_windows(
     return chosen
 
 
-def window_reason(window: dict[str, Any], hourly: pd.DataFrame) -> list[str]:
+def window_reason(window: dict[str, Any]) -> list[str]:
     """Summarize the two strongest forecast drivers using actual window values."""
     if not window or not window.get("rows"):
         return []

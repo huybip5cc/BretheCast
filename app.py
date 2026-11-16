@@ -54,7 +54,7 @@ with st.spinner("Đang tải dữ liệu…"):
 standard = st.session_state.get("aqi_standard", "US AQI")
 
 
-if mode == "Gợi ý hôm nay":
+if mode == "Dự báo & gợi ý hoạt động":
     preferences = current_preferences()
     suite = None
     forecast = pd.DataFrame()
@@ -77,7 +77,7 @@ if mode == "Gợi ý hôm nay":
         render_today_dashboard(suite, forecast, "US AQI")
         st.markdown('<div class="source-note" style="margin-top:28px">Nguồn dữ liệu: <a href="https://open-meteo.com/" target="_blank">Open‑Meteo</a> · <a href="https://atmosphere.copernicus.eu/" target="_blank">CAMS</a> · Giờ Việt Nam (UTC+7)</div>', unsafe_allow_html=True)
     with sidebar_slot.container():
-        sidebar_conclusion(city, sidebar_forecast, sidebar_plan, preferences["activity"], preferences["group"])
+        sidebar_conclusion(city, sidebar_plan, preferences["activity"], preferences["group"])
         city_tile(city)
 else:
     with sidebar_slot.container():

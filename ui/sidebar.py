@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import math
-
 import pandas as pd
 import streamlit as st
 
@@ -39,6 +37,7 @@ def weather_sidebar(city: str, weather: dict, air: dict | None, standard: str):
     probability = hourly_now.get("precipitation_probability")
     rain = f"{fmt(probability)}%" if probability is not None and pd.notna(probability) else "—"
     st.markdown(f'<div class="side-line">{weather_icon(61, 24, "Mưa")} <strong>Khả năng mưa · {rain}</strong></div>', unsafe_allow_html=True)
+    value = None
     if air:
         col = AQI_STANDARDS[standard]["column"]
         value = air["current"].get(col)
@@ -48,49 +47,6 @@ def weather_sidebar(city: str, weather: dict, air: dict | None, standard: str):
         warning_icon = aqi_icon_data("crisis.png")
         st.markdown(f'<div class="side-line side-advice"><img class="side-advice-icon" src="{warning_icon}" alt=""><strong>{advice}</strong></div>', unsafe_allow_html=True)
     city_tile(city)
-
-
-def aqi_gauge_svg(value, standard: str, color: str) -> str:
-    """Draw the sidebar AQI gauge with one shared scale for track, progress and needle."""
-    maximum = 500 if standard == "US AQI" else 150
-    boundaries = (50, 100, 150, 200, 300) if standard == "US AQI" else (20, 40, 60, 80, 100)
-    cx, cy, radius = 130.0, 128.0, 75.0
-    start_x, end_x = cx - radius, cx + radius
-    valid = value is not None and pd.notna(value)
-    ratio = min(max(float(value) / maximum, 0.0), 1.0) if valid else 0.0
-    angle = math.pi * (1.0 - ratio)
-    needle_r = 55.0
-    needle_x = cx + needle_r * math.cos(angle)
-    needle_y = cy - needle_r * math.sin(angle)
-    value_label = fmt(value) if valid else "chưa có"
-    parts = [
-        '<svg viewBox="0 0 260 166" width="245" height="166" role="img" '
-        f'aria-label="Đồng hồ {standard}: {value_label}">',
-        f'<path d="M {start_x:.1f} {cy:.1f} A {radius:.1f} {radius:.1f} 0 0 1 {end_x:.1f} {cy:.1f}" '
-        'fill="none" stroke="#eceef1" stroke-width="12" stroke-linecap="round"/>',
-    ]
-    if valid and ratio > 0:
-        progress_x = cx + radius * math.cos(angle)
-        progress_y = cy - radius * math.sin(angle)
-        parts.append(
-            f'<path d="M {start_x:.1f} {cy:.1f} A {radius:.1f} {radius:.1f} 0 0 1 '
-            f'{progress_x:.1f} {progress_y:.1f}" fill="none" stroke="{color}" '
-            'stroke-width="12" stroke-linecap="round"/>'
-        )
-    for tick in boundaries:
-        tick_angle = math.pi * (1.0 - tick / maximum)
-        outer_r, inner_r = radius + 10, radius - 5
-        x1, y1 = cx + outer_r * math.cos(tick_angle), cy - outer_r * math.sin(tick_angle)
-        x2, y2 = cx + inner_r * math.cos(tick_angle), cy - inner_r * math.sin(tick_angle)
-        parts.append(f'<path d="M {x1:.1f} {y1:.1f} L {x2:.1f} {y2:.1f}" stroke="#c9cdd3" stroke-width="1.5"/>')
-    if valid:
-        parts.extend([
-            f'<path d="M {cx:.1f} {cy:.1f} L {needle_x:.1f} {needle_y:.1f}" '
-            f'stroke="{color}" stroke-width="3.5" stroke-linecap="round"/>',
-            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5.5" fill="white" stroke="{color}" stroke-width="3"/>',
-        ])
-    parts.append('</svg>')
-    return ''.join(parts)
 
 
 def aqi_sidebar(city: str, air: dict, standard: str):
@@ -115,5 +71,7 @@ def aqi_sidebar(city: str, air: dict, standard: str):
 
 def mode_picker() -> str:
     with st.container(key="mode-switch"):
-        mode = st.segmented_control("Chế độ", options=("Dự báo thời tiết", "AQI", "Gợi ý hôm nay"), default="Dự báo thời tiết", label_visibility="collapsed", key="mode") or "Dự báo thời tiết"
+        if st.session_state.get("mode") == "Gợi ý hôm nay":
+            st.session_state["mode"] = "Dự báo & gợi ý hoạt động"
+        mode = st.segmented_control("Chế độ", options=("Dự báo thời tiết", "AQI", "Dự báo & gợi ý hoạt động"), default="Dự báo thời tiết", label_visibility="collapsed", key="mode") or "Dự báo thời tiết"
     return mode

@@ -9,20 +9,22 @@ from pathlib import Path
 import pandas as pd
 
 DB_PATH = Path(__file__).resolve().parent / ".aqi_data" / "history.sqlite3"
+ARCHIVE_DAYS = 90
+
+
+def _archive_cutoff() -> str:
+    return (pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").tz_localize(None) - timedelta(days=ARCHIVE_DAYS)).isoformat()
 
 
 def store_archive(city: str, frame: pd.DataFrame) -> None:
     """Keep the first value returned for each past timestamp; never store forecasts."""
-    if frame.empty:
-        return
-    past = frame.loc[~frame["is_forecast"]].copy()
-    if past.empty:
-        return
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     columns = ["time", "us_aqi", "european_aqi", "pm2_5"]
-    rows = []
-    for _, row in past[columns].iterrows():
-        rows.append((city, row["time"].isoformat(), *(None if pd.isna(row[c]) else float(row[c]) for c in columns[1:])))
+    past = frame.loc[~frame["is_forecast"]] if not frame.empty else pd.DataFrame(columns=columns)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    rows = [
+        (city, timestamp.isoformat(), *(float(value) if pd.notna(value) else None for value in values))
+        for timestamp, *values in past[columns].itertuples(index=False, name=None)
+    ]
     with sqlite3.connect(DB_PATH, timeout=4) as connection:
         connection.execute("""CREATE TABLE IF NOT EXISTS hourly_archive (
             city TEXT NOT NULL,
@@ -32,10 +34,12 @@ def store_archive(city: str, frame: pd.DataFrame) -> None:
             pm2_5 REAL,
             PRIMARY KEY (city, time)
         )""")
-        connection.executemany(
-            "INSERT OR IGNORE INTO hourly_archive(city,time,us_aqi,european_aqi,pm2_5) VALUES(?,?,?,?,?)",
-            rows,
-        )
+        connection.execute("DELETE FROM hourly_archive WHERE time < ?", (_archive_cutoff(),))
+        if rows:
+            connection.executemany(
+                "INSERT OR IGNORE INTO hourly_archive(city,time,us_aqi,european_aqi,pm2_5) VALUES(?,?,?,?,?)",
+                rows,
+            )
 
 
 def load_archive(city: str) -> pd.DataFrame:
@@ -45,9 +49,9 @@ def load_archive(city: str) -> pd.DataFrame:
     try:
         with sqlite3.connect(DB_PATH, timeout=4) as connection:
             frame = pd.read_sql_query(
-                "SELECT time,us_aqi,european_aqi,pm2_5 FROM hourly_archive WHERE city=? ORDER BY time",
+                "SELECT time,us_aqi,european_aqi,pm2_5 FROM hourly_archive WHERE city=? AND time>=? ORDER BY time",
                 connection,
-                params=(city,),
+                params=(city, _archive_cutoff()),
             )
     except sqlite3.Error:
         return pd.DataFrame()
@@ -55,8 +59,6 @@ def load_archive(city: str) -> pd.DataFrame:
         return frame
     frame["time"] = pd.to_datetime(frame["time"], errors="coerce")
     frame = frame.dropna(subset=["time"])
-    cutoff = pd.Timestamp.now(tz="Asia/Ho_Chi_Minh").tz_localize(None) - timedelta(days=90)
-    frame = frame.loc[frame["time"] >= cutoff].copy()
     frame["date"] = frame["time"].dt.date
     frame["is_forecast"] = False
     for column in ("us_aqi", "european_aqi", "pm2_5"):

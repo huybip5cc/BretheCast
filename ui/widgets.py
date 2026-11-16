@@ -17,11 +17,10 @@ def card(label: str, value: str, footer: str = "", compact: bool = False):
 
 
 def daily_aqi_card(value, footer: str, standard: str):
-    _label, color = category(value, standard)
-    help_button = ""
+    _, color = category(value, standard)
     st.markdown(
         '<div class="metric-card compact daily-average-card">'
-        f'<div class="metric-label">AQI trung bình ngày{help_button}</div>'
+        '<div class="metric-label">AQI trung bình ngày</div>'
         f'<div class="daily-aqi-content"><div class="daily-aqi-ring" style="--aqi-color:{color}">'
         f'<strong>{fmt(value)}</strong><span>{standard}</span></div></div>'
         f'<div class="metric-foot">{footer}</div></div>',
@@ -31,10 +30,9 @@ def daily_aqi_card(value, footer: str, standard: str):
 
 def time_insight_card(label: str, value: str, footer: str):
     icon_src = aqi_icon_data("clock.png")
-    help_button = ""
     st.markdown(
         '<div class="metric-card compact time-insight-card">'
-        f'<div class="metric-label">{label}{help_button}</div>'
+        f'<div class="metric-label">{label}</div>'
         f'<div class="time-insight-main"><img class="time-insight-icon" src="{icon_src}" alt="Biểu tượng thời gian">'
         f'<div class="metric-value">{value}</div></div>'
         f'<div class="metric-foot">{footer}</div></div>',
@@ -295,6 +293,4 @@ def card_markup(label: str, value: str, footer: str = "", standard: str = "US AQ
         status, color = category(aqi_value, standard)
         meter = aqi_meter_markup(aqi_value, color, standard)
         return f'<div class="metric-card air-quality-card">{label_markup}<div class="metric-value">{value}</div>{meter}<div class="metric-foot"><strong style="color:{color}">{status}</strong></div></div>'
-    if label in ("Độ ẩm", "Tầm nhìn", "Chất lượng không khí"):
-        return f'<div class="metric-card">{label_markup}<div class="metric-value">{value}</div><div class="metric-foot"><strong>{footer}</strong></div></div>'
     return f'<div class="metric-card">{label_markup}<div class="metric-value">{value}</div><div class="metric-foot">{footer}</div></div>'

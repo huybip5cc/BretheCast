@@ -20,7 +20,7 @@ from ui.widgets import air_info_button, card, daily_aqi_card, pm25_gauge_markup,
 
 
 def forecast_aqi(air: dict, standard: str):
-    st.markdown('<div class="section-title">5 ngày tới</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Dự báo AQI · 5 ngày tới</div><div class="section-note">AQI trung bình ngày, tổng hợp từ các giờ dự báo Open-Meteo có dữ liệu.</div>', unsafe_allow_html=True)
     future = air["hourly"].loc[air["hourly"].is_forecast].copy()
     daily = daily_aqi(future, standard, forecast=True)
     cards = []
@@ -111,17 +111,6 @@ def aqi_insights(air: dict, standard: str):
                         else:
                             card(*entries[idx], compact=True)
     st.markdown('<div class="source-note">AQI/PM₂.₅ và chuỗi quá khứ là ước tính mô hình CAMS qua Open‑Meteo, không phải số đo trạm quan trắc. Trung bình ngày dùng trung bình số học các giờ có dữ liệu.</div>', unsafe_allow_html=True)
-
-
-def chart_layout():
-    layout = go.Layout(
-        height=280, margin=dict(l=8, r=12, t=8, b=24), paper_bgcolor="white", plot_bgcolor="white",
-        font=dict(family="Poppins, sans-serif", color="#7e8187", size=11),
-        xaxis=dict(showgrid=False, zeroline=False, showline=False, tickformat="%d %b · %H:%M", nticks=7),
-        yaxis=dict(showgrid=True, gridcolor="#f0f0f2", zeroline=False, showline=False, rangemode="tozero", title=None),
-        hovermode="x unified", showlegend=True, legend=dict(orientation="h", y=1.12, x=0),
-    )
-    return layout
 
 
 def add_sky_gradient_bars(

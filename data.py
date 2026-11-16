@@ -11,14 +11,13 @@ import requests
 import streamlit as st
 
 from cities import CITIES, TIMEZONE
-from history_store import load_archive, store_archive
+from history_store import ARCHIVE_DAYS, load_archive, store_archive
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 TIMEOUT = 15
-# Số ngày quá khứ yêu cầu mỗi lần gọi. Open-Meteo cho phép tối đa 92 ngày; 90 ngày khớp với
-# khoảng đọc lịch sử SQLite (90 ngày) và tùy chọn "90 ngày" của biểu đồ lịch sử AQI.
-PAST_DAYS = 90
+# Dùng cùng khoảng lưu lịch sử để khớp API, biểu đồ và SQLite.
+PAST_DAYS = ARCHIVE_DAYS
 
 
 class DataUnavailable(RuntimeError):

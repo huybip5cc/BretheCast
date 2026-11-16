@@ -1,10 +1,4 @@
-.venv/
-.python/
-.setup/
-__pycache__/
-.aqi_data/
-*.py[cod]
-# Python cache
+# Python
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -12,6 +6,9 @@ __pycache__/
 # Virtual environment
 venv/
 .venv/
+.python/
+.setup/
 
-# Environment variables
+# Local data and secrets
+.aqi_data/
 .env

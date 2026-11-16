@@ -67,7 +67,7 @@ def daily_aqi(frame: pd.DataFrame, standard: str, forecast: bool = False) -> pd.
         return pd.DataFrame(columns=["date", "aqi", "pm2_5"])
     return (
         sample.groupby("date", as_index=False)
-        .agg(aqi=(column, "mean"), pm2_5=("pm2_5", "mean"), peak=(column, "max"), hours=(column, "count"))
+        .agg(aqi=(column, "mean"), pm2_5=("pm2_5", "mean"))
         .sort_values("date")
     )
 
@@ -127,19 +127,6 @@ def hourly_aqi_pattern(
 def available_history(frame: pd.DataFrame, standard: str) -> pd.DataFrame:
     col = AQI_STANDARDS[standard]["column"]
     return frame.loc[(~frame.is_forecast) & frame[col].notna()].copy()
-
-
-def anomaly_count(frame: pd.DataFrame, standard: str) -> int | None:
-    """Flag hourly AQI points beyond 1.5 IQR; require a full day of valid samples."""
-    col = AQI_STANDARDS[standard]["column"]
-    values = frame[col].dropna()
-    if len(values) < 24:
-        return None
-    q1, q3 = values.quantile([0.25, 0.75])
-    spread = q3 - q1
-    if spread == 0:
-        return 0
-    return int(((values < q1 - 1.5 * spread) | (values > q3 + 1.5 * spread)).sum())
 
 
 def hottest_pattern_period(frame: pd.DataFrame, standard: str) -> tuple[str, float] | None:
