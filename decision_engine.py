@@ -128,8 +128,11 @@ def _fit_classifier(data: pd.DataFrame, horizon: int, threshold: int) -> dict[st
     result.update(
         status="ready", features=columns, model=make().fit(data[columns], data.target),   # mô hình dùng thật: học lại trên toàn bộ
         metrics=_scores(y, p),
-        climatology=_scores(y, np.full(len(y), base)),                                    # baseline 1: luôn đoán tần suất chung
-        current_over_threshold=_scores(y, (test.us_aqi_now > threshold).astype(float).to_numpy()),  # baseline 2: "đang vượt thì sẽ vượt"
+        # baseline 1: luôn đoán tần suất chung
+        climatology=_scores(y, np.full(len(y), base)),          
+        # baseline 2: "đang vượt thì sẽ vượt"
+        current_over_threshold=_scores(y, (test.us_aqi_now > threshold).astype(float).to_numpy()),  
+        
         prevalence=base, alert_threshold=ALERT,
         false_negative=int(((y == 1) & (p < ALERT)).sum()), false_positive=int(((y == 0) & (p >= ALERT)).sum()),
         calibration_points=points, test_probabilities=p.tolist(), test_labels=y.tolist(),
