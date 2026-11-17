@@ -95,6 +95,7 @@ div[data-testid="stToolbar"]{display:none}
 .forecast-icon .weather-icon{width:46px;height:46px;object-fit:contain}
 .forecast-icon .aqi-weather-icon{width:48px;height:48px;object-fit:contain}
 .forecast-value{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.aqi-forecast-grid .forecast-value{font-size:23px;line-height:1.5}
 .forecast-sub{font-size:10px;color:#888b90;margin-top:4px;line-height:1.3}
 .weather-temps{font-size:13px;font-variant-numeric:tabular-nums}.weather-temps span{color:#a0a2a6;font-weight:400}
 .metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px;row-gap:18px;align-items:stretch}
