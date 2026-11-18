@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from activity_rules import ACTIVITIES, rank_windows, score_hour, window_reason
+from activity_rules import ACTIVITIES, format_uv_index, rank_windows, score_hour, window_reason
 from decision_engine import FEATURE_LABELS, HORIZONS, explain_probability, predict_exceedance, thresholds_for_city
 from health import TARGET_GROUPS, recommendation
 
@@ -26,8 +26,12 @@ def _city_thresholds() -> tuple[int, ...]:
 
 def current_preferences() -> dict[str, Any]:
     """Read the state from the previous rerun so the sidebar summary stays in sync."""
+    activity = st.session_state.get("suggest_activity", ACTIVITIES[0])
+    if activity not in ACTIVITIES:
+        activity = ACTIVITIES[0]
+        st.session_state["suggest_activity"] = activity
     return {
-        "activity": st.session_state.get("suggest_activity", ACTIVITIES[0]),
+        "activity": activity,
         "group": st.session_state.get("suggest_group", TARGET_GROUPS[0]),
         "start": st.session_state.get("suggest_start", DEFAULT_START),
         "end": st.session_state.get("suggest_end", DEFAULT_END),
@@ -92,7 +96,7 @@ def _window_card(window: dict[str, Any], number: int) -> str:
     uv_values = pd.to_numeric(rows.get("uv_index", pd.Series(dtype="float64")), errors="coerce").dropna()
     if not uv_values.empty:
         sun = '<span class="window-mini-icon" aria-hidden="true">☀️</span>'
-        metrics.append(f'<span class="window-reason-item">UV cao nhất <b>{uv_values.max():.0f}</b>{sun}</span>')
+        metrics.append(f'<span class="window-reason-item">UV cao nhất <b>{format_uv_index(float(uv_values.max()))}</b>{sun}</span>')
     reason = "".join(metrics)
     card_class = "window-card-featured" if number == 0 else "window-card-alt"
     return (
@@ -214,7 +218,7 @@ def _weather_card(plan: list[dict[str, Any]]) -> None:
     if temp.notna().any():
         parts.append(f"Nhiệt độ {temp.min():.0f}–{temp.max():.0f}°C")
     if uv.notna().any():
-        parts.append(f"UV cao nhất {uv.max():.0f}")
+        parts.append(f"UV cao nhất {format_uv_index(float(uv.max()))}")
     if rain.notna().any():
         parts.append(f"Mưa tối đa {rain.max():.0f}%")
     text = " · ".join(parts) or "Thời tiết theo giờ chưa có đủ chỉ số để tóm tắt."

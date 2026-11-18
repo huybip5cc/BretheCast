@@ -1,8 +1,50 @@
 from datetime import time
 
 import pandas as pd
+import pytest
 
-from activity_rules import ACTIVITIES, rank_windows, score_hour
+from activity_rules import ACTIVITIES, ACTIVITY_WEIGHTS, format_uv_index, rank_windows, score_hour
+
+
+def test_activity_menu_has_flexible_options_and_matching_weights():
+    expected = {
+        "Đi bộ / chạy bộ ngoài trời",
+        "Đạp xe ngoài trời",
+        "Tập thể dục ngoài trời",
+        "Đi dạo / vui chơi công viên",
+        "Dã ngoại",
+        "Làm vườn / chăm sóc cây",
+        "Đi chợ / mua sắm linh hoạt",
+        "Phơi quần áo",
+        "Mở cửa thông thoáng nhà",
+    }
+
+    assert set(ACTIVITIES) == expected
+    assert not {"Đón con", "Đi làm, di chuyển"} & set(ACTIVITIES)
+    assert set(ACTIVITY_WEIGHTS) == set(ACTIVITIES)
+    assert all(sum(weights.values()) == pytest.approx(1) for weights in ACTIVITY_WEIGHTS.values())
+
+
+def test_every_activity_can_be_scored():
+    conditions = {
+        "us_aqi": 65,
+        "temperature_2m": 25,
+        "relative_humidity_2m": 55,
+        "uv_index": 3,
+        "precipitation_probability": 10,
+        "precipitation": 0,
+    }
+
+    for activity in ACTIVITIES:
+        result = score_hour(conditions, activity)
+        assert 0 <= result["risk_score"] <= 100
+
+
+def test_small_uv_values_are_not_rounded_to_zero():
+    assert format_uv_index(0) == "<1"
+    assert format_uv_index(0.4) == "<1"
+    assert format_uv_index(1) == "1.0"
+    assert format_uv_index(5.7) == "5.7"
 
 
 def test_hour_score_uses_health_bands_and_does_not_invent_group_cutoffs():

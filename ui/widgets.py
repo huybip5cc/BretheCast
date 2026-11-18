@@ -251,12 +251,12 @@ def pm25_gauge_markup(value, standard: str) -> str:
         f'<path class="pm25-track" d="{arc_path}"/>'
         f'<path class="pm25-progress" d="{arc_path}" stroke="{color}" stroke-dasharray="{circumference:.1f}" stroke-dashoffset="{dash_offset:.1f}"/>'
         f'{"".join(ticks)}{"".join(labels)}'
-        f'<text class="pm25-state" x="120" y="45" text-anchor="middle" fill="{color}">{status_label}</text>'
         f'<line class="pm25-needle" x1="{cx:.1f}" y1="{cy:.1f}" x2="{needle_x:.1f}" y2="{needle_y:.1f}" stroke="{color}"/>'
         f'<circle class="pm25-hub" cx="{cx:.1f}" cy="{cy:.1f}" r="5.5" fill="{color}"/>'
         f'<text class="pm25-value" x="120" y="179" text-anchor="middle">{value_label}</text>'
         '<text class="pm25-unit" x="120" y="196" text-anchor="middle">µg/m³</text>'
         '</svg>'
+        f'<div class="pm25-state" style="color:{color}">{status_label}</div>'
     )
 
 

@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 HORIZONS = (6, 12, 24)                # dự báo xác suất sau 6/12/24 giờ
 ALERT = 0.25                          # báo động khi xác suất >= 25% (bỏ sót tốn gấp 3 lần báo nhầm: 1/(1+3))
 
-# Ngưỡng US AQI theo thành phố. Hà Nội nền ô nhiễm cao: ngưỡng 100 bị vượt gần như mọi lúc nên dùng 150 và 200.
+# Ngưỡng US AQI theo thành phố. 
 DEFAULT_THRESHOLDS = (100, 150)
 CITY_THRESHOLDS = {"Hà Nội": (100, 150)}
 

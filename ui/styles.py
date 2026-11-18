@@ -158,7 +158,7 @@ div[data-testid="stToolbar"]{display:none}
 .pm25-dial .pm25-progress{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .45s ease,stroke .25s ease}
 .pm25-dial .pm25-tick{stroke:#aeb2ba;stroke-width:1.5}
 .pm25-dial .pm25-tick-label{font:500 9px 'Poppins',sans-serif;fill:#898d94}
-.pm25-dial .pm25-state{font:500 13px 'Poppins',sans-serif;fill:#45484e}
+.pm25-state{font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;text-align:center;line-height:1.3;margin-top:-2px}
 .pm25-dial .pm25-unit{font:500 9px 'Poppins',sans-serif;fill:#8e9298}
 .pm25-dial .pm25-value{font:600 25px 'Poppins',sans-serif;fill:#17181a}
 .pm25-dial .pm25-needle{stroke-width:2;stroke-linecap:round}

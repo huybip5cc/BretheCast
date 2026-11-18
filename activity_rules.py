@@ -17,21 +17,27 @@ import numpy as np
 import pandas as pd
 
 ACTIVITIES = (
-    "Chạy bộ",
-    "Đón con",
-    "Phơi đồ",
-    "Đi làm, di chuyển",
-    "Mở cửa thông gió",
+    "Đi bộ / chạy bộ ngoài trời",
+    "Đạp xe ngoài trời",
+    "Tập thể dục ngoài trời",
+    "Đi dạo / vui chơi công viên",
+    "Dã ngoại",
+    "Làm vườn / chăm sóc cây",
+    "Đi chợ / mua sắm linh hoạt",
+    "Phơi quần áo",
+    "Mở cửa thông thoáng nhà",
 )
 
-# Utility weights express how strongly each forecast condition affects the
-# practical suitability of an activity. They do not alter health thresholds.
 ACTIVITY_WEIGHTS = {
-    "Chạy bộ": {"air": 0.45, "heat": 0.25, "uv": 0.20, "rain": 0.10},
-    "Đón con": {"air": 0.45, "heat": 0.20, "uv": 0.15, "rain": 0.20},
-    "Phơi đồ": {"air": 0.35, "heat": 0.15, "uv": 0.15, "rain": 0.35},
-    "Đi làm, di chuyển": {"air": 0.45, "heat": 0.15, "uv": 0.10, "rain": 0.30},
-    "Mở cửa thông gió": {"air": 0.50, "heat": 0.15, "uv": 0.05, "rain": 0.30},
+    "Đi bộ / chạy bộ ngoài trời": {"air": 0.45, "heat": 0.25, "uv": 0.20, "rain": 0.10},
+    "Đạp xe ngoài trời": {"air": 0.40, "heat": 0.20, "uv": 0.15, "rain": 0.25},
+    "Tập thể dục ngoài trời": {"air": 0.45, "heat": 0.25, "uv": 0.20, "rain": 0.10},
+    "Đi dạo / vui chơi công viên": {"air": 0.40, "heat": 0.20, "uv": 0.15, "rain": 0.25},
+    "Dã ngoại": {"air": 0.35, "heat": 0.20, "uv": 0.15, "rain": 0.30},
+    "Làm vườn / chăm sóc cây": {"air": 0.35, "heat": 0.20, "uv": 0.15, "rain": 0.30},
+    "Đi chợ / mua sắm linh hoạt": {"air": 0.40, "heat": 0.10, "uv": 0.05, "rain": 0.45},
+    "Phơi quần áo": {"air": 0.30, "heat": 0.15, "uv": 0.00, "rain": 0.55},
+    "Mở cửa thông thoáng nhà": {"air": 0.75, "heat": 0.10, "uv": 0.00, "rain": 0.15},
 }
 
 def _number(row: Any, key: str) -> float | None:
@@ -100,6 +106,11 @@ def _heat_risk(index_f: float) -> float:
     if index_f < 125:
         return 65.0 + (index_f - 103) * (25 / 22)
     return 90.0 + min(10.0, (index_f - 125) * 0.5)
+
+
+def format_uv_index(value: float) -> str:
+    """Avoid displaying small UV forecasts as zero after integer rounding."""
+    return "<1" if value < 1 else f"{value:.1f}"
 
 
 def score_hour(row: Any, activity: str, group: str | None = None) -> dict[str, Any]:
@@ -213,7 +224,7 @@ def window_reason(window: dict[str, Any]) -> list[str]:
     uv_values = pd.to_numeric(data.get("uv_index"), errors="coerce")
     if uv_values.notna().any():
         peak_uv = float(uv_values.max())
-        parts.append((window.get("components", {}).get("uv", 0), f"UV cao nhất {peak_uv:.0f}"))
+        parts.append((window.get("components", {}).get("uv", 0), f"UV cao nhất {format_uv_index(peak_uv)}"))
     rain_values = pd.to_numeric(data.get("precipitation_probability"), errors="coerce")
     if rain_values.notna().any():
         peak_rain = float(rain_values.max())
